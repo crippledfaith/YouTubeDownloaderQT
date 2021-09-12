@@ -1,13 +1,11 @@
 from downloadManger import Download_Manger
-import sys
 from PySide6 import QtWidgets
-import ctypes
+import ctypes,os,sys
 from mainWindowUI import Ui_MainWindow
 
 def main():
     if __name__ == "__main__":
-
-        myappid = u'mycompany.myproduct.subproduct.version' # arbitrary string
+        myappid = u'mycompany.myproduct.subproduct.version_1' # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
         app = QtWidgets.QApplication(sys.argv)

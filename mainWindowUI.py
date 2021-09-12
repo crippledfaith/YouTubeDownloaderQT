@@ -23,7 +23,7 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(500, 200)
         MainWindow.setMinimumSize(QSize(500, 200))
-        MainWindow.setMaximumSize(QSize(500, 210))
+        MainWindow.setMaximumSize(QSize(500, 200))
         MainWindow.setSizeIncrement(QSize(500, 200))
 
         if getattr(sys, 'frozen', False):

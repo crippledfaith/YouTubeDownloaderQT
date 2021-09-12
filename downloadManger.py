@@ -1,20 +1,24 @@
 
 from logging import fatal
 from PySide6 import QtCore, QtGui
-from PySide6.QtWidgets import QListWidgetItem
+from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from clipboardWatcher import ClipboardWatcher
 from mainWindowUI import Ui_MainWindow
 from pytube import YouTube,Stream,request
-import traceback, sys, uuid, helper, string, unicodedata, os, threading,pathlib,urllib.request
-import moviepy.editor as mpe
+import traceback, sys, uuid, helper, string, unicodedata, os, threading,urllib.request,time
+import ffmpeg
+from shutil import copyfile
+
 class Download_Manger():
 
 
     def __init__(self,ui:Ui_MainWindow) -> None:
+
+
         self.ui = ui
         self.ui.linkAddButton.clicked.connect(self.get_link_info)
-        self.ui.downloadSettingsAudioCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed())
-        self.ui.downloadSettingsVideoCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed())
+        self.ui.downloadSettingsAudioCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed(self.ui.downloadSettingsAudioCheckBox))
+        self.ui.downloadSettingsVideoCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed(self.ui.downloadSettingsVideoCheckBox))
         self.ui.downloadSettingsDownloadButton.clicked.connect(lambda x: self.start_download())
         self.ui.downloadSettingsCancelButton.clicked.connect(lambda x: self.stop_download())
         self.watcher = ClipboardWatcher(self.ui.clipBoardTimer,self.is_youtube_link, 
@@ -33,9 +37,7 @@ class Download_Manger():
         media = []
         if self.ui.downloadSettingsVideoCheckBox.isChecked():
             media.append(video)
-            extension = video.subtype
-        else:
-             extension = audio.subtype
+        
         if self.ui.downloadSettingsAudioCheckBox.isChecked():
             media.append(audio)
 
@@ -45,25 +47,37 @@ class Download_Manger():
         self.enable_panel(False)
         self.enable_donwload_button(False,True)
         
-        #self.currentThread = threading.Thread(target=self.download, args=[filePath,media],
-        #             daemon=True)
-        #self.currentThread.start()
+        worker = Worker(self.download,filePath,media)
 
-        worker = Worker(self.download,filePath,media) # Any other args, kwargs are passed to the run function
-        #worker.signals.result.connect(self.print_output)
         worker.signals.finished.connect(self.donwload_completed)
         worker.signals.progress.connect(self.update_progress)
         worker.signals.error.connect(self.error)
-        # Execute
         self.threadpool.start(worker)
 
     def error(self,error):
-        pass
-
-    def donwload_completed(self):
         self.ui.progressBar.setValue(0)
+        self.ui.progressBar.setMaximum(100)
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
+        self.show_message(error)
+
+        
+    def show_message(self,messgae):
+        msgBox = QMessageBox()
+        msgBox.setText(messgae)
+        msgBox.setWindowTitle("Youtube Downloader QT")
+        #msgBox.setInformativeText("Do you want to save your changes?")
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.setDefaultButton(QMessageBox.Ok)
+        ret = msgBox.exec()
+        
+    def donwload_completed(self):
+        self.ui.progressBar.setValue(0)
+        self.ui.progressBar.setMaximum(100)
+        self.enable_panel(True)
+        self.enable_donwload_button(True,False)
+        self.show_message("Download Complete.")
+
 
     def download(self,path,medias,progress_callback):
         media_stream:Stream
@@ -89,28 +103,46 @@ class Download_Manger():
                         downloaded += len(chunk)
                         progress_callback.emit(downloaded,filesize)
                     else:
+                        progress_callback.emit(1,1)
+                        time.sleep(1)
                         break
             progress_callback.emit(0,1)
-            
+        
         if self.is_cancelled == False and len(file) == 2:
+            if getattr(sys, 'frozen', False):
+                application_path = sys._MEIPASS
+            elif __file__:
+                application_path = os.path.dirname(__file__)
+            ffmpegName = 'ffmpeg.exe'
+            ffmpegPath = os.path.join(application_path, ffmpegName)
             self.ui.progressBar.setMaximum(0)
-            my_clip = mpe.VideoFileClip(file[0])
-            audio_background = mpe.AudioFileClip(file[1])
-            final_clip = my_clip.set_audio(audio_background)
-            final_clip.write_videofile(path)
+            video_stream = ffmpeg.input(file[0])
+            audio_stream = ffmpeg.input(file[1])
+            ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath,quiet=True)
+ 
+        if self.is_cancelled == False and len(file) == 1:
+            copyfile(file[0], path)
+
+        if os.path.isfile(file[0]):
+            os.remove(file[0])
+        if len(file) == 2:
+            if os.path.isfile(file[1]):
+                os.remove(file[1])
 
         self.ui.progressBar.setMaximum(100)
         self.is_cancelled = False
 
-
-
     def stop_download(self):
         self.is_cancelled = True
 
-    def download_settings_checkBox_state_changed(self):
+    def download_settings_checkBox_state_changed(self,checkbox):
+        if self.ui.downloadSettingsVideoCheckBox.isChecked() == False and self.ui.downloadSettingsAudioCheckBox.isChecked()== False:
+            if checkbox == self.ui.downloadSettingsVideoCheckBox:
+                self.ui.downloadSettingsAudioCheckBox.setChecked(True)
+            else:
+                self.ui.downloadSettingsVideoCheckBox.setChecked(True)
         self.ui.downloadSettingsVideoComboBox.setEnabled(self.ui.downloadSettingsVideoCheckBox.isChecked())
         self.ui.downloadSettingsAudioComboBox.setEnabled(self.ui.downloadSettingsAudioCheckBox.isChecked())
-        
 
     def is_youtube_link(self,url):
         if url.startswith("https://www.youtube.com/") or url.startswith("https://youtu.be"):
@@ -126,16 +158,12 @@ class Download_Manger():
                      daemon=True).start()
 
     def clean_filename(self,filename,replace=' '):
-        # replace spaces
         valid_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
         char_limit = 255
         for r in replace:
             filename = filename.replace(r,'_')
-        
-        # keep only valid ascii chars
+
         cleaned_filename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
-        
-        # keep only whitelisted chars
         cleaned_filename = ''.join(c for c in cleaned_filename if c in valid_filename_chars)
         if len(cleaned_filename)>char_limit:
             print("Warning, filename truncated because it was over {}. Filenames may no longer be unique".format(char_limit))

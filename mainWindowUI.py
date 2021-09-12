@@ -201,7 +201,7 @@ class Ui_MainWindow(object):
         self.linkAutoStartCheckBox.setText(QCoreApplication.translate("MainWindow", u"Auto Start", None))
         self.mediaInfoTitleLabel.setText(QCoreApplication.translate("MainWindow", u"Title: ", None))
         self.mediaInfoAuthorLabel.setText(QCoreApplication.translate("MainWindow", u"Author: ", None))
-        self.mediaInfoViewLabel.setText(QCoreApplication.translate("MainWindow", u"Veiw: ", None))
+        self.mediaInfoViewLabel.setText(QCoreApplication.translate("MainWindow", u"Veiw: 0", None))
         self.mediaInfoOtherLabel.setText(QCoreApplication.translate("MainWindow", u"Lenght: 0s", None))
         self.downloadSettingsVideoCheckBox.setText(QCoreApplication.translate("MainWindow", u"Video:", None))
         self.downloadSettingsAudioCheckBox.setText(QCoreApplication.translate("MainWindow", u"Audio:", None))

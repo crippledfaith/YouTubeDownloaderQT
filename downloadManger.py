@@ -19,6 +19,8 @@ class Download_Manger():
         self.ui.downloadSettingsVideoCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed(self.ui.downloadSettingsVideoCheckBox))
         self.ui.downloadSettingsDownloadButton.clicked.connect(lambda x: self.start_download())
         self.ui.downloadSettingsCancelButton.clicked.connect(lambda x: self.stop_download())
+        self.ui.downloadSettingsVideoComboBox.currentTextChanged.connect(self.video_on_combobox_changed)
+        self.ui.downloadSettingsAudioComboBox.currentTextChanged.connect(self.audio_on_combobox_changed)
         self.watcher = ClipboardWatcher(self.ui.clipBoardTimer,self.is_youtube_link, 
                                self.update_link_text,
                                500)
@@ -28,6 +30,8 @@ class Download_Manger():
         self.enable_donwload_button(False,False)
         self.applicationDataPath = helper.get_user_data_dir("YoutubeDownloaderQT")
         self.threadpool = QtCore.QThreadPool()
+    
+ 
 
     def start_download(self):
         audio = self.ui.downloadSettingsAudioComboBox.currentData()
@@ -165,6 +169,32 @@ class Download_Manger():
                 self.ui.downloadSettingsVideoCheckBox.setChecked(True)
         self.ui.downloadSettingsVideoComboBox.setEnabled(self.ui.downloadSettingsVideoCheckBox.isChecked())
         self.ui.downloadSettingsAudioComboBox.setEnabled(self.ui.downloadSettingsAudioCheckBox.isChecked())
+        self.update_download_size() 
+
+    def video_on_combobox_changed(self):
+        self.update_download_size() 
+
+    def audio_on_combobox_changed(self):
+        self.update_download_size()
+
+    def update_download_size(self):
+        audio = self.ui.downloadSettingsAudioComboBox.currentData()
+        video = self.ui.downloadSettingsVideoComboBox.currentData()
+        size=0
+        if self.ui.downloadSettingsAudioCheckBox.isChecked():
+            size = audio.filesize
+        if self.ui.downloadSettingsVideoCheckBox.isChecked():
+            size = size + video.filesize
+        strSize = self.convert_bytes(size)
+        self.ui.downloadSettingsDownloadButton.setText(strSize)
+
+    def convert_bytes(self,size):
+        for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024.0:
+                return "%3.1f %s" % (size, x)
+            size /= 1024.0
+
+        return size
 
     def is_youtube_link(self,url):
         if url.startswith("https://www.youtube.com/") or url.startswith("https://youtu.be"):

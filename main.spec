@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# pyinstaller  main.spec
+# pyinstaller main.spec
 
 block_cipher = None
 
@@ -7,7 +7,7 @@ block_cipher = None
 a = Analysis(['main.py'],
              pathex=['E:\doc\Programming\Python\YouTubeDownloaderQT\YouTubeDownloaderQT'],
              binaries=[],
-             datas=[('icon.ico', '.'),('ffmpeg.exe', '.')],
+             datas=[('icon.ico', '.'),('ffmpeg.exe', '.'),('download.ico', '.')],
              hiddenimports=[],
              hookspath=[],
              hooksconfig={},
@@ -28,7 +28,7 @@ exe = EXE(pyz,
           name='Youtube Downloader QT',
           debug=False,
           strip=False,
-          upx=True,
+          upx=False,
           console=False , 
           windowed=True ,
           icon='icon.ico' )

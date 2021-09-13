@@ -159,13 +159,20 @@ class Ui_MainWindow(object):
 
         self.downloadSettingsAudioComboBox = QComboBox(self.horizontalLayoutWidget_3)
         self.downloadSettingsAudioComboBox.setObjectName(u"downloadSettingsAudioComboBox")
-
         self.downloadControlLayout.addWidget(self.downloadSettingsAudioComboBox)
 
         self.downloadSettingsDownloadButton = QPushButton(self.horizontalLayoutWidget_3)
         self.downloadSettingsDownloadButton.setObjectName(u"downloadSettingsDownloadButton")
         self.downloadSettingsDownloadButton.setMaximumWidth(70)
+        
+        iconFile = 'download.ico'
+        iconPath = os.path.join(application_path, iconFile)
+        pixmap = QPixmap(iconPath)
+        buttonIcon=QIcon(pixmap)
+        self.downloadSettingsDownloadButton.setIcon(buttonIcon)
+        self.downloadSettingsDownloadButton.setIconSize(QSize(20,20))
         self.downloadButtonLayout.addWidget(self.downloadSettingsDownloadButton)
+
 
         self.downloadSettingsCancelButton = QPushButton(self.horizontalLayoutWidget_3)
         self.downloadSettingsCancelButton.setObjectName(u"downloadSettingsCancelButton")
@@ -205,7 +212,7 @@ class Ui_MainWindow(object):
         self.mediaInfoOtherLabel.setText(QCoreApplication.translate("MainWindow", u"Lenght: 0s", None))
         self.downloadSettingsVideoCheckBox.setText(QCoreApplication.translate("MainWindow", u"Video:", None))
         self.downloadSettingsAudioCheckBox.setText(QCoreApplication.translate("MainWindow", u"Audio:", None))
-        self.downloadSettingsDownloadButton.setText(QCoreApplication.translate("MainWindow", u"Download", None))
+        self.downloadSettingsDownloadButton.setText(QCoreApplication.translate("MainWindow", u" 0 bytes", None))
         self.downloadSettingsCancelButton.setText(QCoreApplication.translate("MainWindow", u"Cancel", None))
     # retranslateUi
 

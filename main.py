@@ -3,6 +3,7 @@ from PySide6 import QtWidgets
 import ctypes,os,sys
 from mainWindowUI import Ui_MainWindow
 
+
 def main():
     if __name__ == "__main__":
         myappid = u'mycompany.myproduct.subproduct.version_1' # arbitrary string

@@ -1,5 +1,4 @@
 
-from logging import fatal
 from PySide6 import QtCore, QtGui
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from clipboardWatcher import ClipboardWatcher

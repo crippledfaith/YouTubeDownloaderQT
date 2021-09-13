@@ -1,5 +1,4 @@
 from PySide6.QtCore import QTimer
-
 import pyperclip
 
 class ClipboardWatcher():

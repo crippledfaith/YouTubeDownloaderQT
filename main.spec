@@ -30,4 +30,5 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=False , 
+          windowed=True ,
           icon='icon.ico' )

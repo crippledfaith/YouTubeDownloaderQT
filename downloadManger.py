@@ -7,14 +7,13 @@ from mainWindowUI import Ui_MainWindow
 from pytube import YouTube,Stream,request
 import traceback, sys, uuid, helper, string, unicodedata, os, threading,urllib.request,time
 import ffmpeg
+import subprocess
 from shutil import copyfile
 
 class Download_Manger():
 
 
     def __init__(self,ui:Ui_MainWindow) -> None:
-
-
         self.ui = ui
         self.ui.linkAddButton.clicked.connect(self.get_link_info)
         self.ui.downloadSettingsAudioCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed(self.ui.downloadSettingsAudioCheckBox))
@@ -34,20 +33,34 @@ class Download_Manger():
     def start_download(self):
         audio = self.ui.downloadSettingsAudioComboBox.currentData()
         video = self.ui.downloadSettingsVideoComboBox.currentData()
+        mediaType=""
         media = []
         if self.ui.downloadSettingsVideoCheckBox.isChecked():
             media.append(video)
+            if self.ui.downloadSettingsAudioCheckBox.isChecked() == False:
+                mediaType="-(video only)"
+
         
         if self.ui.downloadSettingsAudioCheckBox.isChecked():
             media.append(audio)
+            if self.ui.downloadSettingsVideoCheckBox.isChecked() == False:
+                mediaType="-(audio only)"
 
-        fileName = f"{self.clean_filename(media[0].default_filename)}"
-        filePath = os.path.join(self.videoFolderPath,fileName)
-
+        filenameWithoutExtension =os.path.splitext(media[0].default_filename)[0]
+        filenameExtension =os.path.splitext(media[0].default_filename)[1]
+        fullFileName = f"{filenameWithoutExtension}{mediaType}{filenameExtension}"
+        fileName = f"{self.clean_filename(fullFileName)}"
+        self.filePath = os.path.join(self.videoFolderPath,fileName)
+        if os.path.isfile(self.filePath):
+            result = self.show_message(f'You have downloaded this media and the file already exist.\n{self.filePath}?\n Are you sure you want to download this file?',QMessageBox.Yes|QMessageBox.No)
+            if result==QMessageBox.No:
+                return
+            else:
+                os.remove(self.filePath)
         self.enable_panel(False)
         self.enable_donwload_button(False,True)
         
-        worker = Worker(self.download,filePath,media)
+        worker = Worker(self.download,self.filePath,media)
 
         worker.signals.finished.connect(self.donwload_completed)
         worker.signals.progress.connect(self.update_progress)
@@ -59,25 +72,34 @@ class Download_Manger():
         self.ui.progressBar.setMaximum(100)
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
-        self.show_message(error)
+        _,err,_ =error
+        if type(err).__name__ == "TypeError":
+            err:TypeError
+            self.show_message(str(err))
+        elif type(err).__name__ == "OSError":
+            err:OSError
+            type(err).__name__
+            type(str(err)).__name__
+            self.show_message(str(err))
 
         
-    def show_message(self,messgae):
+    def show_message(self,messgae,buttons= QMessageBox.Ok):
         msgBox = QMessageBox()
         msgBox.setText(messgae)
         msgBox.setWindowTitle("Youtube Downloader QT")
         #msgBox.setInformativeText("Do you want to save your changes?")
-        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.setStandardButtons(buttons)
         msgBox.setDefaultButton(QMessageBox.Ok)
-        ret = msgBox.exec()
+        return msgBox.exec()
         
     def donwload_completed(self):
         self.ui.progressBar.setValue(0)
         self.ui.progressBar.setMaximum(100)
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
-        self.show_message("Download Complete.")
-
+        result =self.show_message(f"Download Completed.\nFile:{self.filePath}\nWould like to Open the containing folder?",QMessageBox.Yes|QMessageBox.No)
+        if result==QMessageBox.Yes:
+                subprocess.Popen(f'explorer /select,{self.filePath}')
 
     def download(self,path,medias,progress_callback):
         media_stream:Stream
@@ -115,10 +137,11 @@ class Download_Manger():
                 application_path = os.path.dirname(__file__)
             ffmpegName = 'ffmpeg.exe'
             ffmpegPath = os.path.join(application_path, ffmpegName)
+            print(ffmpegPath)
             self.ui.progressBar.setMaximum(0)
             video_stream = ffmpeg.input(file[0])
             audio_stream = ffmpeg.input(file[1])
-            ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath,quiet=True)
+            ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath)
  
         if self.is_cancelled == False and len(file) == 1:
             copyfile(file[0], path)
@@ -183,13 +206,11 @@ class Download_Manger():
         image = QtGui.QImage()
         image.loadFromData(data)
         self.ui.mediaInfoGraphicsView.setPixmap(QtGui.QPixmap(image))
-        for s in streams:
-            print(s)
-        print('-----------------')
+
         videoStreams = streams.filter(only_video=True)
-        for s in videoStreams:
-            print(s)
         audioSteams = streams.filter(only_audio=True)
+        self.ui.downloadSettingsVideoComboBox.clear()
+        self.ui.downloadSettingsAudioComboBox.clear()
         for v in videoStreams:
             self.ui.downloadSettingsVideoComboBox.addItem(f"{v.resolution}-{v.subtype}" ,v)
         for v in audioSteams:
@@ -270,5 +291,5 @@ class Worker(QtCore.QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.result.emit(result)  # Return the result of the processing
-        finally:
-            self.signals.finished.emit()  # Done
+            self.signals.finished.emit()
+              

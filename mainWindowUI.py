@@ -202,7 +202,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"YouTube Downloader QT", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Youtube Downloader QT", None))
         self.linkLabel.setText(QCoreApplication.translate("MainWindow", u"Link: ", None))
         self.linkAddButton.setText(QCoreApplication.translate("MainWindow", u"Add", None))
         self.linkAutoStartCheckBox.setText(QCoreApplication.translate("MainWindow", u"Auto Start", None))

@@ -203,6 +203,8 @@ class Download_Manger():
 
     def update_link_text(self,clipboard_content):
         self.ui.linkTextBox.setText(clipboard_content)
+        self.get_link_info()
+
 
     def get_link_info(self):
         if self.is_youtube_link(self.ui.linkTextBox.text()):

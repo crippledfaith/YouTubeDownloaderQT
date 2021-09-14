@@ -144,7 +144,7 @@ class Download_Manger():
             self.ui.progressBar.setMaximum(0)
             video_stream = ffmpeg.input(file[0])
             audio_stream = ffmpeg.input(file[1])
-            ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath)
+            ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath, quiet=False)
  
         if self.is_cancelled == False and len(file) == 1:
             copyfile(file[0], path)
@@ -197,7 +197,7 @@ class Download_Manger():
         return size
 
     def is_youtube_link(self,url):
-        if url.startswith("https://www.youtube.com/") or url.startswith("https://youtu.be"):
+        if url.startswith("https://www.youtube.com/watch?v=") or url.startswith("https://youtu.be/"):
             return True
         return False
 
@@ -227,27 +227,30 @@ class Download_Manger():
     def get_info(self,link):
         self.enable_panel(False)
         self.enable_donwload_button(False,False)
-        yt = YouTube(link)
-        streams = yt.streams
-        self.ui.mediaInfoTitleLabel.setText(f"Title: {yt.title}")
-        self.ui.mediaInfoAuthorLabel.setText(f"Author: {yt.author}")
-        self.ui.mediaInfoViewLabel.setText(f"View: {yt.views:,}")
-        self.ui.mediaInfoOtherLabel.setText(f"Length: {self.time_format(yt.length)}")
-        data = urllib.request.urlopen(yt.thumbnail_url).read()
-        image = QtGui.QImage()
-        image.loadFromData(data)
-        self.ui.mediaInfoGraphicsView.setPixmap(QtGui.QPixmap(image))
+        try:
+            yt = YouTube(link)
+            streams = yt.streams
+            self.ui.mediaInfoTitleLabel.setText(f"Title: {yt.title}")
+            self.ui.mediaInfoAuthorLabel.setText(f"Author: {yt.author}")
+            self.ui.mediaInfoViewLabel.setText(f"View: {yt.views:,}")
+            self.ui.mediaInfoOtherLabel.setText(f"Length: {self.time_format(yt.length)}")
+            data = urllib.request.urlopen(yt.thumbnail_url).read()
+            image = QtGui.QImage()
+            image.loadFromData(data)
+            self.ui.mediaInfoGraphicsView.setPixmap(QtGui.QPixmap(image))
 
-        videoStreams = streams.filter(only_video=True)
-        audioSteams = streams.filter(only_audio=True)
-        self.ui.downloadSettingsVideoComboBox.clear()
-        self.ui.downloadSettingsAudioComboBox.clear()
-        for v in videoStreams:
-            self.ui.downloadSettingsVideoComboBox.addItem(f"{v.resolution}-{v.subtype}" ,v)
-        for v in audioSteams:
-            self.ui.downloadSettingsAudioComboBox.addItem(f"{v.abr}-{v.subtype}",v)
-        self.ui.downloadSettingsVideoComboBox.setCurrentIndex(0)
-        self.ui.downloadSettingsAudioComboBox.setCurrentIndex(0)
+            videoStreams = streams.filter(only_video=True)
+            audioSteams = streams.filter(only_audio=True)
+            self.ui.downloadSettingsVideoComboBox.clear()
+            self.ui.downloadSettingsAudioComboBox.clear()
+            for v in videoStreams:
+                self.ui.downloadSettingsVideoComboBox.addItem(f"{v.resolution}-{v.subtype}" ,v)
+            for v in audioSteams:
+                self.ui.downloadSettingsAudioComboBox.addItem(f"{v.abr}-{v.subtype}",v)
+            self.ui.downloadSettingsVideoComboBox.setCurrentIndex(0)
+            self.ui.downloadSettingsAudioComboBox.setCurrentIndex(0)
+        except:
+            pass
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
     

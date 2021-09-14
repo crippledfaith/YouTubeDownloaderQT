@@ -163,7 +163,7 @@ class Ui_MainWindow(object):
 
         self.downloadSettingsDownloadButton = QPushButton(self.horizontalLayoutWidget_3)
         self.downloadSettingsDownloadButton.setObjectName(u"downloadSettingsDownloadButton")
-        self.downloadSettingsDownloadButton.setMaximumWidth(70)
+        self.downloadSettingsDownloadButton.setMaximumWidth(90)
         
         iconFile = 'download.ico'
         iconPath = os.path.join(application_path, iconFile)

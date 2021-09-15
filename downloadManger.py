@@ -1,4 +1,5 @@
 
+from logging import fatal
 from PySide6 import QtCore, QtGui
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from clipboardWatcher import ClipboardWatcher
@@ -8,6 +9,7 @@ import traceback, sys, uuid, helper, string, unicodedata, os, threading,urllib.r
 import ffmpeg
 import subprocess
 from shutil import copyfile
+import psutil
 
 class Download_Manger():
 
@@ -30,7 +32,7 @@ class Download_Manger():
         self.enable_donwload_button(False,False)
         self.applicationDataPath = helper.get_user_data_dir("YoutubeDownloaderQT")
         self.threadpool = QtCore.QThreadPool()
-    
+
  
 
     def start_download(self):
@@ -75,6 +77,7 @@ class Download_Manger():
         self.ui.progressBar.setMaximum(100)
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
+        self.is_cancelled= False
         _,err,_ =error
         if type(err).__name__ == "TypeError":
             err:TypeError
@@ -100,9 +103,11 @@ class Download_Manger():
         self.ui.progressBar.setMaximum(100)
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
-        result =self.show_message(f"Download Completed.\nFile:{self.filePath}\nWould like to Open the containing folder?",QMessageBox.Yes|QMessageBox.No)
-        if result==QMessageBox.Yes:
-                subprocess.Popen(f'explorer /select,{self.filePath}')
+        if self.is_cancelled == False:
+            result =self.show_message(f"Download Completed.\nFile:{self.filePath}\nWould like to Open the containing folder?",QMessageBox.Yes|QMessageBox.No)
+            if result==QMessageBox.Yes:
+                    subprocess.Popen(f'explorer /select,{self.filePath}')
+        self.is_cancelled= False
 
     def download(self,path,medias,progress_callback):
         media_stream:Stream
@@ -129,7 +134,7 @@ class Download_Manger():
                         progress_callback.emit(downloaded,filesize)
                     else:
                         progress_callback.emit(1,1)
-                        time.sleep(1)
+                        time.sleep(.2)
                         break
             progress_callback.emit(0,1)
         
@@ -145,7 +150,6 @@ class Download_Manger():
             video_stream = ffmpeg.input(file[0])
             audio_stream = ffmpeg.input(file[1])
             ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath, quiet=False)
- 
         if self.is_cancelled == False and len(file) == 1:
             copyfile(file[0], path)
 
@@ -154,12 +158,29 @@ class Download_Manger():
         if len(file) == 2:
             if os.path.isfile(file[1]):
                 os.remove(file[1])
-
         self.ui.progressBar.setMaximum(100)
-        self.is_cancelled = False
 
+    
     def stop_download(self):
+        self.ui.downloadSettingsCancelButton.setEnabled(False)
         self.is_cancelled = True
+        self.kill("ffmpeg.exe")
+    
+    
+
+    def kill(self, process_name):
+        try:
+            print(f'Killing processes {process_name}')
+            processes = psutil.process_iter()
+            for process in processes:
+                try:
+                    if process_name == process.name() or process_name in process.cmdline():
+                        print(f'found {process.name()} | {process.cmdline()}')
+                        process.terminate()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     def download_settings_checkBox_state_changed(self,checkbox):
         if self.ui.downloadSettingsVideoCheckBox.isChecked() == False and self.ui.downloadSettingsAudioCheckBox.isChecked()== False:

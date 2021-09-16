@@ -32,6 +32,7 @@ class Download_Manger():
         self.enable_donwload_button(False,False)
         self.applicationDataPath = helper.get_user_data_dir("YoutubeDownloaderQT")
         self.threadpool = QtCore.QThreadPool()
+        self.inProgress = False
 
  
 
@@ -110,6 +111,7 @@ class Download_Manger():
         self.is_cancelled= False
 
     def download(self,path,medias,progress_callback):
+        self.inProgress = True
         media_stream:Stream
         if os.path.isfile(path):
             os.remove(path)
@@ -159,6 +161,7 @@ class Download_Manger():
             if os.path.isfile(file[1]):
                 os.remove(file[1])
         self.ui.progressBar.setMaximum(100)
+        self.inProgress = False
 
     
     def stop_download(self):
@@ -223,8 +226,9 @@ class Download_Manger():
         return False
 
     def update_link_text(self,clipboard_content):
-        self.ui.linkTextBox.setText(clipboard_content)
-        self.get_link_info()
+        if(self.inProgress == False):
+            self.ui.linkTextBox.setText(clipboard_content)
+            self.get_link_info()
 
 
     def get_link_info(self):
@@ -248,7 +252,9 @@ class Download_Manger():
     def get_info(self,link):
         self.enable_panel(False)
         self.enable_donwload_button(False,False)
+        self.inProgress = True
         try:
+            self.ui.progressBar.setMaximum(0)
             yt = YouTube(link)
             streams = yt.streams
             self.ui.mediaInfoTitleLabel.setText(f"Title: {yt.title}")
@@ -274,6 +280,9 @@ class Download_Manger():
             pass
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
+        self.ui.progressBar.setMaximum(100)
+        self.inProgress = False
+
     
 
     def enable_panel(self, isEnable):

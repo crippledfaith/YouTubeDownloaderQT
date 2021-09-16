@@ -91,7 +91,6 @@ class Ui_MainWindow(object):
 
         self.mediaInfoAuthorLabel = QLabel(self.horizontalLayoutWidget_2)
         self.mediaInfoAuthorLabel.setObjectName(u"mediaInfoAuthorLabel")
-
         self.mediaInfoInnerLayout2.addWidget(self.mediaInfoAuthorLabel)
 
         self.mediaInfoViewLabel = QLabel(self.horizontalLayoutWidget_2)
@@ -131,34 +130,50 @@ class Ui_MainWindow(object):
         self.downloadControlLayout = QHBoxLayout(self.horizontalLayoutWidget_3)
         self.downloadControlLayout.setObjectName(u"downloadControlLayout")
         self.downloadControlLayout.setContentsMargins(0, 0, 0, 0)
-
         self.downloadSettingsLayout.addLayout(self.downloadControlLayout)
 
         self.downloadButtonLayout = QHBoxLayout(self.horizontalLayoutWidget_3)
         self.downloadButtonLayout.setObjectName(u"downloadButtonLayout")
         self.downloadButtonLayout.setContentsMargins(0, 0, 0, 0)
-
         self.downloadSettingsLayout.addLayout(self.downloadButtonLayout)
+
+
+        self.downloadSettingsShowMoreButton = QPushButton(self.horizontalLayoutWidget_3)
+        self.downloadSettingsShowMoreButton.setObjectName(u"downloadSettingsShowMoreButton")
+        self.downloadSettingsShowMoreButton.setMaximumWidth(20)
+        self.downloadControlLayout.addWidget(self.downloadSettingsShowMoreButton)
+        
+        self.downloadSettingsVideoAudioLabel = QLabel(self.horizontalLayoutWidget_3)
+        self.downloadSettingsVideoAudioLabel.setObjectName(u"downloadSettingsVideoAudioLabel")
+        self.downloadSettingsVideoAudioLabel.setMaximumWidth(100)
+        self.downloadControlLayout.addWidget(self.downloadSettingsVideoAudioLabel)
+
+        self.downloadSettingsVideoAudioComboBox = QComboBox(self.horizontalLayoutWidget_3)
+        self.downloadSettingsVideoAudioComboBox.setObjectName(u"downloadSettingsAudioVideoComboBox")
+        self.downloadControlLayout.addWidget(self.downloadSettingsVideoAudioComboBox)
 
         self.downloadSettingsVideoCheckBox = QCheckBox(self.horizontalLayoutWidget_3)
         self.downloadSettingsVideoCheckBox.setObjectName(u"downloadSettingsVideoCheckBox")
         self.downloadSettingsVideoCheckBox.setMaximumWidth(55)
         self.downloadSettingsVideoCheckBox.setChecked(True)
+        self.downloadSettingsVideoCheckBox.setVisible(False)
         self.downloadControlLayout.addWidget(self.downloadSettingsVideoCheckBox)
 
         self.downloadSettingsVideoComboBox = QComboBox(self.horizontalLayoutWidget_3)
         self.downloadSettingsVideoComboBox.setObjectName(u"downloadSettingsVideoComboBox")
-
+        self.downloadSettingsVideoComboBox.setVisible(False)
         self.downloadControlLayout.addWidget(self.downloadSettingsVideoComboBox)
 
         self.downloadSettingsAudioCheckBox = QCheckBox(self.horizontalLayoutWidget_3)
         self.downloadSettingsAudioCheckBox.setObjectName(u"downloadSettingsAudioCheckBox")
         self.downloadSettingsAudioCheckBox.setMaximumWidth(55)
         self.downloadSettingsAudioCheckBox.setChecked(True)
+        self.downloadSettingsAudioCheckBox.setVisible(False)
         self.downloadControlLayout.addWidget(self.downloadSettingsAudioCheckBox)
 
         self.downloadSettingsAudioComboBox = QComboBox(self.horizontalLayoutWidget_3)
         self.downloadSettingsAudioComboBox.setObjectName(u"downloadSettingsAudioComboBox")
+        self.downloadSettingsAudioComboBox.setVisible(False)
         self.downloadControlLayout.addWidget(self.downloadSettingsAudioComboBox)
 
         self.downloadSettingsDownloadButton = QPushButton(self.horizontalLayoutWidget_3)
@@ -214,5 +229,6 @@ class Ui_MainWindow(object):
         self.downloadSettingsAudioCheckBox.setText(QCoreApplication.translate("MainWindow", u"Audio:", None))
         self.downloadSettingsDownloadButton.setText(QCoreApplication.translate("MainWindow", u" 0 bytes", None))
         self.downloadSettingsCancelButton.setText(QCoreApplication.translate("MainWindow", u"Cancel", None))
+        self.downloadSettingsShowMoreButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.downloadSettingsVideoAudioLabel.setText(QCoreApplication.translate("MainWindow", u"Video And Audio:", None))
     # retranslateUi
-

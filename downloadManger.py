@@ -16,13 +16,16 @@ class Download_Manger():
 
     def __init__(self,ui:Ui_MainWindow) -> None:
         self.ui = ui
+        self.isVideoAudio = True
         self.ui.linkAddButton.clicked.connect(self.get_link_info)
+        self.ui.downloadSettingsShowMoreButton.clicked.connect(self.show_more_controls)
         self.ui.downloadSettingsAudioCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed(self.ui.downloadSettingsAudioCheckBox))
         self.ui.downloadSettingsVideoCheckBox.stateChanged.connect(lambda x: self.download_settings_checkBox_state_changed(self.ui.downloadSettingsVideoCheckBox))
         self.ui.downloadSettingsDownloadButton.clicked.connect(lambda x: self.start_download())
         self.ui.downloadSettingsCancelButton.clicked.connect(lambda x: self.stop_download())
         self.ui.downloadSettingsVideoComboBox.currentTextChanged.connect(self.video_on_combobox_changed)
         self.ui.downloadSettingsAudioComboBox.currentTextChanged.connect(self.audio_on_combobox_changed)
+        self.ui.downloadSettingsVideoAudioComboBox.currentTextChanged.connect(self.video_on_combobox_changed)
         self.watcher = ClipboardWatcher(self.ui.clipBoardTimer,self.is_youtube_link, 
                                self.update_link_text,
                                500)
@@ -33,24 +36,50 @@ class Download_Manger():
         self.applicationDataPath = helper.get_user_data_dir("YoutubeDownloaderQT")
         self.threadpool = QtCore.QThreadPool()
         self.inProgress = False
+    
+    def show_more_controls(self):
+        if self.isVideoAudio :
+            self.ui.downloadSettingsVideoComboBox.setVisible(True)
+            self.ui.downloadSettingsAudioComboBox.setVisible(True)
+            self.ui.downloadSettingsVideoCheckBox.setVisible(True)
+            self.ui.downloadSettingsAudioCheckBox.setVisible(True)
 
- 
+            self.ui.downloadSettingsVideoAudioComboBox.setVisible(False)
+            self.ui.downloadSettingsVideoAudioLabel.setVisible(False)
+
+            self.isVideoAudio = False
+        else:
+            self.ui.downloadSettingsVideoAudioComboBox.setVisible(True)
+            self.ui.downloadSettingsVideoAudioLabel.setVisible(True)
+
+            self.ui.downloadSettingsVideoComboBox.setVisible(False)
+            self.ui.downloadSettingsAudioComboBox.setVisible(False)
+            self.ui.downloadSettingsVideoCheckBox.setVisible(False)
+            self.ui.downloadSettingsAudioCheckBox.setVisible(False)
+
+            self.isVideoAudio = True
+        self.update_download_size()
+
 
     def start_download(self):
         audio = self.ui.downloadSettingsAudioComboBox.currentData()
         video = self.ui.downloadSettingsVideoComboBox.currentData()
         mediaType=""
         media = []
-        if self.ui.downloadSettingsVideoCheckBox.isChecked():
+        if self.isVideoAudio:
+            video = self.ui.downloadSettingsVideoAudioComboBox.currentData()
             media.append(video)
-            if self.ui.downloadSettingsAudioCheckBox.isChecked() == False:
-                mediaType="-(video only)"
+        else:
+            if self.ui.downloadSettingsVideoCheckBox.isChecked():
+                media.append(video)
+                if self.ui.downloadSettingsAudioCheckBox.isChecked() == False:
+                    mediaType="-(video only)"
 
-        
-        if self.ui.downloadSettingsAudioCheckBox.isChecked():
-            media.append(audio)
-            if self.ui.downloadSettingsVideoCheckBox.isChecked() == False:
-                mediaType="-(audio only)"
+            
+            if self.ui.downloadSettingsAudioCheckBox.isChecked():
+                media.append(audio)
+                if self.ui.downloadSettingsVideoCheckBox.isChecked() == False:
+                    mediaType="-(audio only)"
 
         filenameWithoutExtension =os.path.splitext(media[0].default_filename)[0]
         filenameExtension =os.path.splitext(media[0].default_filename)[1]
@@ -204,11 +233,15 @@ class Download_Manger():
     def update_download_size(self):
         audio = self.ui.downloadSettingsAudioComboBox.currentData()
         video = self.ui.downloadSettingsVideoComboBox.currentData()
+        vidioAudio = self.ui.downloadSettingsVideoAudioComboBox.currentData()
         size=0
-        if self.ui.downloadSettingsAudioCheckBox.isChecked():
-            size = audio.filesize
-        if self.ui.downloadSettingsVideoCheckBox.isChecked():
-            size = size + video.filesize
+        if self.isVideoAudio:
+            size = vidioAudio.filesize
+        else:
+            if self.ui.downloadSettingsAudioCheckBox.isChecked():
+                size = audio.filesize
+            if self.ui.downloadSettingsVideoCheckBox.isChecked():
+                size = size + video.filesize
         strSize = self.convert_bytes(size)
         self.ui.downloadSettingsDownloadButton.setText(strSize)
 
@@ -266,16 +299,21 @@ class Download_Manger():
             image.loadFromData(data)
             self.ui.mediaInfoGraphicsView.setPixmap(QtGui.QPixmap(image))
 
-            videoStreams = streams.filter(only_video=True)
-            audioSteams = streams.filter(only_audio=True)
+            videoStreams = streams.filter(only_video=True).order_by('resolution').desc()
+            audioSteams = streams.filter(only_audio=True).order_by('abr').desc()
+            videoAudioSteams = streams.filter(progressive=True).order_by('resolution').desc()
+
             self.ui.downloadSettingsVideoComboBox.clear()
             self.ui.downloadSettingsAudioComboBox.clear()
             for v in videoStreams:
                 self.ui.downloadSettingsVideoComboBox.addItem(f"{v.resolution}-{v.subtype}" ,v)
             for v in audioSteams:
                 self.ui.downloadSettingsAudioComboBox.addItem(f"{v.abr}-{v.subtype}",v)
+            for v in videoAudioSteams:
+                self.ui.downloadSettingsVideoAudioComboBox.addItem(f"{v.resolution} {v.abr}-{v.subtype}",v)
             self.ui.downloadSettingsVideoComboBox.setCurrentIndex(0)
             self.ui.downloadSettingsAudioComboBox.setCurrentIndex(0)
+            self.ui.downloadSettingsVideoAudioComboBox.setCurrentIndex(0)
         except:
             pass
         self.enable_panel(True)
@@ -286,9 +324,11 @@ class Download_Manger():
     
 
     def enable_panel(self, isEnable):
+        self.ui.downloadSettingsShowMoreButton.setEnabled(isEnable)
         self.ui.horizontalLayoutWidget.setEnabled(isEnable)
         self.ui.downloadSettingsVideoCheckBox.setEnabled(isEnable)
         self.ui.downloadSettingsAudioCheckBox.setEnabled(isEnable)
+        self.ui.downloadSettingsVideoAudioComboBox.setEnabled(isEnable)
         if isEnable:
             self.ui.downloadSettingsVideoComboBox.setEnabled(self.ui.downloadSettingsVideoCheckBox.isChecked())
             self.ui.downloadSettingsAudioComboBox.setEnabled(self.ui.downloadSettingsAudioCheckBox.isChecked())

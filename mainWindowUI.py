@@ -8,6 +8,7 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
+from threading import main_thread
 from PySide6 import QtGui
 from PySide6 import QtWidgets
 from PySide6 import QtCore
@@ -25,7 +26,6 @@ class Ui_MainWindow(object):
         MainWindow.setMinimumSize(QSize(500, 200))
         MainWindow.setMaximumSize(QSize(500, 200))
         MainWindow.setSizeIncrement(QSize(500, 200))
-
         if getattr(sys, 'frozen', False):
             application_path = sys._MEIPASS
         elif __file__:
@@ -36,9 +36,8 @@ class Ui_MainWindow(object):
         icon.addPixmap(QtGui.QPixmap(iconPath), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         icon.addPixmap(QtGui.QPixmap(iconPath), QtGui.QIcon.Normal, QtGui.QIcon.On)
         MainWindow.setWindowIcon(icon)
-
+        self.MainWindow = MainWindow
         self.clipBoardTimer = QtCore. QTimer()
-
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayoutWidget = QWidget(self.centralwidget)

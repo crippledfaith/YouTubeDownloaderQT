@@ -1,15 +1,15 @@
 
 from logging import fatal
 from PySide6 import QtCore, QtGui
-from PySide6.QtWidgets import QListWidgetItem, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QListWidgetItem, QMessageBox
 from clipboardWatcher import ClipboardWatcher
 from mainWindowUI import Ui_MainWindow
 from pytube import YouTube,Stream,request
 import traceback, sys, uuid, helper, string, unicodedata, os, threading,urllib.request,time
-import ffmpeg
 import subprocess
 from shutil import copyfile
 import psutil
+
 
 class Download_Manger():
 
@@ -36,6 +36,7 @@ class Download_Manger():
         self.applicationDataPath = helper.get_user_data_dir("YoutubeDownloaderQT")
         self.threadpool = QtCore.QThreadPool()
         self.inProgress = False
+        self.process = None
     
     def show_more_controls(self):
         if self.isVideoAudio :
@@ -74,24 +75,26 @@ class Download_Manger():
                 media.append(video)
                 if self.ui.downloadSettingsAudioCheckBox.isChecked() == False:
                     mediaType="-(video only)"
-
             
             if self.ui.downloadSettingsAudioCheckBox.isChecked():
                 media.append(audio)
                 if self.ui.downloadSettingsVideoCheckBox.isChecked() == False:
                     mediaType="-(audio only)"
-
         filenameWithoutExtension =os.path.splitext(media[0].default_filename)[0]
         filenameExtension =os.path.splitext(media[0].default_filename)[1]
         fullFileName = f"{filenameWithoutExtension}{mediaType}{filenameExtension}"
         fileName = f"{self.clean_filename(fullFileName)}"
-        self.filePath = os.path.join(self.videoFolderPath,fileName)
-        if os.path.isfile(self.filePath):
-            result = self.show_message(f'You have downloaded this media and the file already exist.\n{self.filePath}?\n Are you sure you want to download this file?',QMessageBox.Yes|QMessageBox.No)
-            if result==QMessageBox.No:
-                return
-            else:
-                os.remove(self.filePath)
+        filePath = os.path.join(self.videoFolderPath,fileName)
+        self.filePath = QFileDialog.getSaveFileName(self.ui.MainWindow,"Save File", filePath,f"Video File (*{filenameExtension})")[0]
+        if self.filePath=='':
+            return
+
+        # if os.path.isfile(self.filePath):
+        #     result = self.show_message(f'You have downloaded this media and the file already exist.\n{self.filePath}?\n Are you sure you want to download this file?',QMessageBox.Yes|QMessageBox.No)
+        #     if result==QMessageBox.No:
+        #         return
+        #     else:
+        #         os.remove(self.filePath)
         self.enable_panel(False)
         self.enable_donwload_button(False,True)
         
@@ -134,9 +137,11 @@ class Download_Manger():
         self.enable_panel(True)
         self.enable_donwload_button(True,False)
         if self.is_cancelled == False:
-            result =self.show_message(f"Download Completed.\nFile:{self.filePath}\nWould like to Open the containing folder?",QMessageBox.Yes|QMessageBox.No)
+            result =self.show_message(f"Download Completed.\nFile:{self.filePath}\n\nWould like to open the containing folder?",QMessageBox.Yes|QMessageBox.No)
             if result==QMessageBox.Yes:
-                    subprocess.Popen(f'explorer /select,{self.filePath}')
+                path = self.filePath.replace("/","\\")
+                arg = f'explorer /select, "{path}"'
+                subprocess.Popen(arg)
         self.is_cancelled= False
 
     def download(self,path,medias,progress_callback):
@@ -178,9 +183,13 @@ class Download_Manger():
             ffmpegPath = os.path.join(application_path, ffmpegName)
             print(ffmpegPath)
             self.ui.progressBar.setMaximum(0)
-            video_stream = ffmpeg.input(file[0])
-            audio_stream = ffmpeg.input(file[1])
-            ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath, quiet=False)
+            # video_stream = ffmpeg.input(file[0])
+            # audio_stream = ffmpeg.input(file[1])
+            # ffmpeg.output(audio_stream, video_stream, path).run(overwrite_output=True, cmd=ffmpegPath, quiet=False)
+
+            self.process  = subprocess.Popen(f'{ffmpegPath} -i "{ file[0] }" -i "{ file[1] }" -c copy -c:a aac -b:a 192k "{path}" -y',creationflags = subprocess.CREATE_NO_WINDOW)
+            self.process.wait()
+
         if self.is_cancelled == False and len(file) == 1:
             copyfile(file[0], path)
 
@@ -196,23 +205,25 @@ class Download_Manger():
     def stop_download(self):
         self.ui.downloadSettingsCancelButton.setEnabled(False)
         self.is_cancelled = True
-        self.kill("ffmpeg.exe")
+        if(self.process !=  None):
+            subprocess.Popen.terminate(self.process)
+        self.process = None
     
     
 
-    def kill(self, process_name):
-        try:
-            print(f'Killing processes {process_name}')
-            processes = psutil.process_iter()
-            for process in processes:
-                try:
-                    if process_name == process.name() or process_name in process.cmdline():
-                        print(f'found {process.name()} | {process.cmdline()}')
-                        process.terminate()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+    # def kill(self, process_name):
+    #     try:
+    #         print(f'Killing processes {process_name}')
+    #         processes = psutil.process_iter()
+    #         for process in processes:
+    #             try:
+    #                 if process_name == process.name() or process_name in process.cmdline():
+    #                     print(f'found {process.name()} | {process.cmdline()}')
+    #                     process.terminate()
+    #             except Exception:
+    #                 pass
+    #     except Exception:
+    #         pass
 
     def download_settings_checkBox_state_changed(self,checkbox):
         if self.ui.downloadSettingsVideoCheckBox.isChecked() == False and self.ui.downloadSettingsAudioCheckBox.isChecked()== False:
@@ -299,9 +310,9 @@ class Download_Manger():
             image.loadFromData(data)
             self.ui.mediaInfoGraphicsView.setPixmap(QtGui.QPixmap(image))
 
-            videoStreams = streams.filter(only_video=True).order_by('resolution').desc()
+            videoStreams = streams.filter(only_video=True, file_extension='mp4').order_by('resolution').desc()
             audioSteams = streams.filter(only_audio=True).order_by('abr').desc()
-            videoAudioSteams = streams.filter(progressive=True).order_by('resolution').desc()
+            videoAudioSteams = streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc()
 
             self.ui.downloadSettingsVideoComboBox.clear()
             self.ui.downloadSettingsAudioComboBox.clear()

@@ -149,6 +149,7 @@ class Ui_MainWindow(object):
 
         self.downloadSettingsVideoAudioComboBox = QComboBox(self.horizontalLayoutWidget_3)
         self.downloadSettingsVideoAudioComboBox.setObjectName(u"downloadSettingsAudioVideoComboBox")
+        self.downloadSettingsVideoAudioComboBox.setMinimumWidth(219)
         self.downloadControlLayout.addWidget(self.downloadSettingsVideoAudioComboBox)
 
         self.downloadSettingsVideoCheckBox = QCheckBox(self.horizontalLayoutWidget_3)
